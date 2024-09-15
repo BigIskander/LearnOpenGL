@@ -184,6 +184,11 @@ int main() {
 
     // std::cout << "Ok" << std::endl;
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+    // Number of attributes
+    int nrAttributes;
+    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+    std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
     
     // Draw loop
     while(!glfwWindowShouldClose(window))

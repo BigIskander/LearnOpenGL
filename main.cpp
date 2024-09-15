@@ -21,6 +21,14 @@ const char *fragmentShaderSource = "#version 330 core\n"
     "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
     "}\0";
 
+// Fragment shader2
+const char *fragmentShaderSource2 = "#version 330 core\n"
+    "out vec4 FragColor;\n"
+    "void main()\n"
+    "{\n"
+    "   FragColor = vec4(0.0f, 1.0f, 1.0f, 1.0f);\n"
+    "}\0";
+
 int main() {
     // Initialize GLFW
     glfwInit();
@@ -127,6 +135,21 @@ int main() {
         std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
+    // Fragment shader2
+    unsigned int fragmentShader2;
+    fragmentShader2 = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader2, 1, &fragmentShaderSource2, NULL);
+    glCompileShader(fragmentShader2);
+
+    // Check if fragment shader compiled successfully
+    glGetShaderiv(fragmentShader2, GL_COMPILE_STATUS, &success);
+
+    if(!success)
+    {
+        glGetShaderInfoLog(fragmentShader2, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+
     // Shader programm
     unsigned int shaderProgram;
     shaderProgram = glCreateProgram();
@@ -141,13 +164,26 @@ int main() {
         std::cout << "ERROR::SHADER::PROGRAMM::LINKING_FAILED\n" << infoLog << std::endl;
     }
 
+    // Shader programm2
+    unsigned int shaderProgram2;
+    shaderProgram2 = glCreateProgram();
+
+    glAttachShader(shaderProgram2, vertexShader);
+    glAttachShader(shaderProgram2, fragmentShader2);
+    glLinkProgram(shaderProgram2);
+
+    glGetProgramiv(shaderProgram2, GL_LINK_STATUS, &success);
+    if(!success) {
+        glGetProgramInfoLog(shaderProgram2, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAMM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-    
+    glDeleteShader(fragmentShader2);
 
     // std::cout << "Ok" << std::endl;
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glUseProgram(shaderProgram);
     
     // Draw loop
     while(!glfwWindowShouldClose(window))
@@ -156,10 +192,12 @@ int main() {
         processInput(window);
 
         // Rendering commands
+        glUseProgram(shaderProgram);
         glClear(GL_COLOR_BUFFER_BIT);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         // glBindVertexArray(0);
+        glUseProgram(shaderProgram2);
         glBindVertexArray(VAO2);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         // glBindVertexArray(0);

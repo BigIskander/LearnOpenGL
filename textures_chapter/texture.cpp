@@ -41,8 +41,9 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // Create texture
-    unsigned int texture;
+    unsigned int texture, texture2;
     glGenTextures(1, &texture);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     // set the texture wrapping/filtering options (on the currently bound texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
@@ -52,6 +53,7 @@ int main() {
     // load and generate the texture
     // Load an image
     int width, height, nrChannels;
+    stbi_set_flip_vertically_on_load(true);
     unsigned char *data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
@@ -63,7 +65,28 @@ int main() {
         std::cout << "Failed to load texture" << std::endl;
     }
     stbi_image_free(data);
-
+    
+    glGenTextures(1, &texture2);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Load second image
+    data = stbi_load("awesomeface.png", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+    
     // Two triangles, Triangle vertices
     float vertices[] = {
         // positions          // colors           // texture coords
@@ -104,6 +127,8 @@ int main() {
 
     Shader myshader = Shader("./shaders/vertex.glsl", "./shaders/fragment.glsl");
     myshader.use();
+    myshader.setInt("texture1", 0);
+    myshader.setInt("texture2", 1);
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
@@ -116,6 +141,13 @@ int main() {
         // Rendering commands
         glClear(GL_COLOR_BUFFER_BIT);
         // glBindTexture(GL_TEXTURE_2D, texture);
+        // glBindVertexArray(VAO);
+        // glActiveTexture(GL_TEXTURE0);
+        // glBindTexture(GL_TEXTURE_2D, texture);
+        // glActiveTexture(GL_TEXTURE1);
+        // glBindTexture(GL_TEXTURE_2D, texture2);
+
+        // myshader.use();
         // glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 

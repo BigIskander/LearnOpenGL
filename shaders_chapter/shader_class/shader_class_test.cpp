@@ -39,7 +39,9 @@ int main()
     glViewport(0, 0, 800, 600);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    Shader myshader = Shader("./shaders/vertex.glsl", "./shaders/fragment.glsl");
+    // Shader myshader = Shader("./shaders/vertex.glsl", "./shaders/fragment.glsl");
+    // updown
+    Shader myshader = Shader("./shaders/vertex_updown.glsl", "./shaders/fragment.glsl");
 
     // Triangle vertices
     float vertices[] = {

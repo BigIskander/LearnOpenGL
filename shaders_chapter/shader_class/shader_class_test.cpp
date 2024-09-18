@@ -41,7 +41,7 @@ int main()
 
     // Shader myshader = Shader("./shaders/vertex.glsl", "./shaders/fragment.glsl");
     // updown
-    Shader myshader = Shader("./shaders/vertex_updown.glsl", "./shaders/fragment.glsl");
+    Shader myshader = Shader("./shaders/vertex_offset.glsl", "./shaders/fragment_offset.glsl");
 
     // Triangle vertices
     float vertices[] = {
@@ -76,6 +76,7 @@ int main()
 
         // Rendering commands
         myshader.use();
+        myshader.setFloat("offset", 0.5);
         glClear(GL_COLOR_BUFFER_BIT);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);

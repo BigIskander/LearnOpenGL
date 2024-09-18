@@ -125,7 +125,8 @@ int main() {
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2); 
 
-    Shader myshader = Shader("./shaders/vertex.glsl", "./shaders/fragment.glsl");
+    // Shader myshader = Shader("./shaders/vertex.glsl", "./shaders/fragment.glsl");
+    Shader myshader = Shader("./shaders/vertex.glsl", "./shaders/fragment_happy_reverse.glsl");
     myshader.use();
     myshader.setInt("texture1", 0);
     myshader.setInt("texture2", 1);

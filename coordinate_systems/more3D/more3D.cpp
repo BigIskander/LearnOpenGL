@@ -12,6 +12,14 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 
+glm::mat4 projection;
+glm::mat4 view;
+float FoV = 45.0f;
+int WindowWidth = 800;
+int WindowHeight = 600;
+float cameraX = 0.0f;
+float cameraY = 0.0f;
+
 int main() {
     // Initialize GLFW
     glfwInit();
@@ -179,11 +187,9 @@ int main() {
     // Going3D
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // rotate along x axis (world space)
-    glm::mat4 view = glm::mat4(1.0f);
     // note that we're translating the scene in the reverse direction of where we want to move
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f)); // move camera backward (move scene forward)
-    glm::mat4 projection;
-    projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f); // perspective projection camera
+    view = glm::translate(glm::mat4(1.0f), glm::vec3(cameraX, cameraY, -3.0f)); // move camera backward (move scene forward)
+    projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f); // perspective projection camera
 
     // send transformation matrices to shaders
     myshader.setMat4("model", model);
@@ -199,6 +205,8 @@ int main() {
     {
         // Input
         processInput(window);
+        myshader.setMat4("view", view);
+        myshader.setMat4("projection", projection);
 
         // Rendering commands
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -208,8 +216,9 @@ int main() {
         {
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, cubePositions[i]);
-            float angle = 20.0f * (i + 1.0f); 
-            model = glm::rotate(model, ((float)glfwGetTime() * glm::radians(angle)) / slowDownFactor, glm::vec3(1.0f, 0.3f, 0.5f));
+            float angle = glm::radians(20.0f * (i + 1.0f)); 
+            if(i % 3 == 0) angle = ((float)glfwGetTime() * angle) / slowDownFactor;
+            model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
             myshader.setMat4("model", model);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -227,11 +236,45 @@ int main() {
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
+    WindowWidth = width;
+    WindowHeight = height;
     glViewport(0, 0, width, height);
+    projection = glm::perspective(glm::radians(FoV), (float)width / (float)height, 0.1f, 100.0f);
 }
 
 void processInput(GLFWwindow *window)
 {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && FoV < 180.0)
+    {
+        FoV+=0.1;
+        projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
+    }
+    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && FoV > 0.0)
+    {
+        FoV-=0.1;
+        projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
+    }
+    // move camera
+    if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+    {
+        cameraY+=0.1;
+        view = glm::translate(glm::mat4(1.0f), glm::vec3(cameraX, cameraY, -3.0f));
+    }
+    if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    {
+        cameraY-=0.1;
+        view = glm::translate(glm::mat4(1.0f), glm::vec3(cameraX, cameraY, -3.0f));
+    }
+    if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+    {
+        cameraX-=0.1;
+        view = glm::translate(glm::mat4(1.0f), glm::vec3(cameraX, cameraY, -3.0f));
+    }
+    if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+    {
+        cameraX+=0.1;
+        view = glm::translate(glm::mat4(1.0f), glm::vec3(cameraX, cameraY, -3.0f));
+    }
 }

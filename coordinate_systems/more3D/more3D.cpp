@@ -239,7 +239,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     WindowWidth = width;
     WindowHeight = height;
     glViewport(0, 0, width, height);
-    projection = glm::perspective(glm::radians(FoV), (float)width / (float)height, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
 }
 
 void processInput(GLFWwindow *window)

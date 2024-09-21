@@ -179,7 +179,9 @@ int main() {
     int projectionLoc = glGetUniformLocation(myshader.ID, "projection");
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-    int slowDownFactor = 100;
+    float slowDownFactor = 1000.0f; // slow down it's too fast
+
+    glEnable(GL_DEPTH_TEST); 
 
     // Draw loop
     while(!glfwWindowShouldClose(window))
@@ -188,7 +190,7 @@ int main() {
         processInput(window);
 
         // Rendering commands
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         model = glm::rotate(model, ((float)glfwGetTime() / slowDownFactor) * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glDrawArrays(GL_TRIANGLES, 0, 36);

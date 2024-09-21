@@ -20,6 +20,15 @@ int WindowHeight = 600;
 // float cameraX = 0.0f;
 // float cameraY = 0.0f;
 
+// some camera settings
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+
+// to keep track of frametime
+float deltaTime = 0.0f;	// Time between current frame and last frame
+float lastFrame = 0.0f; // Time of last frame
+
 int main() {
     // Initialize GLFW
     glfwInit();
@@ -202,9 +211,12 @@ int main() {
     // view = glm::translate(glm::mat4(1.0f), glm::vec3(cameraX, cameraY, -3.0f)); // move camera backward (move scene forward)
     projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f); // perspective projection camera
 
+    // new view
+    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
     // send transformation matrices to shaders
     myshader.setMat4("model", model);
-    // myshader.setMat4("view", view);
+    myshader.setMat4("view", view);
     myshader.setMat4("projection", projection);
 
     float slowDownFactor = 1.0f; // slow down it's too fast
@@ -214,6 +226,11 @@ int main() {
     // Draw loop
     while(!glfwWindowShouldClose(window))
     {
+        // account for frametime
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         // Input
         processInput(window);
         // 
@@ -223,10 +240,14 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Camera fly around
-        const float radius = 10.0f;
-        float camX = sin(glfwGetTime()) * radius;
-        float camZ = cos(glfwGetTime()) * radius;
-        view = glm::lookAt(glm::vec3(camX, 5.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+        // const float radius = 10.0f;
+        // float camX = sin(glfwGetTime()) * radius;
+        // float camZ = cos(glfwGetTime()) * radius;
+        // view = glm::lookAt(glm::vec3(camX, 5.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+        // myshader.setMat4("view", view);
+
+        // new view
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         myshader.setMat4("view", view);
 
         // ten rotating cubes
@@ -295,4 +316,14 @@ void processInput(GLFWwindow *window)
     //     cameraX+=0.1;
     //     view = glm::translate(glm::mat4(1.0f), glm::vec3(cameraX, cameraY, -3.0f));
     // }
+    // new move camera
+    float cameraSpeed = 2.5f * deltaTime;; // adjust accordingly
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }

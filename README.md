@@ -1,6 +1,8 @@
 # LearnOpenGL
 
-Nothing interesting here. Just me learning OpenGL by [the book](https://learnopengl.com/).
+Nothing interesting here. Just me learning OpenGL by the book: Joey de Vries, LearnOpenGL [https://learnopengl.com/](https://learnopengl.com/).
+
+Here are just some code snippets (from learnopengl.com) with my modifications.
 
 Used libraries:
 * [GLFW](https://www.glfw.org/download.html)

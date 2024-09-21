@@ -191,9 +191,9 @@ int main() {
     // glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f); 
     // glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
     // glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
-    view = glm::lookAt( glm::vec3(0.0f, 0.0f, 3.0f), 
-                        glm::vec3(0.0f, 0.0f, 0.0f),
-                        glm::vec3(0.0f, 1.0f, 0.0f));
+    // view = glm::lookAt( glm::vec3(0.0f, 0.0f, 3.0f), 
+    //                     glm::vec3(0.0f, 0.0f, 0.0f),
+    //                     glm::vec3(0.0f, 1.0f, 0.0f));
 
     // Going3D
     glm::mat4 model = glm::mat4(1.0f);
@@ -204,7 +204,7 @@ int main() {
 
     // send transformation matrices to shaders
     myshader.setMat4("model", model);
-    myshader.setMat4("view", view);
+    // myshader.setMat4("view", view);
     myshader.setMat4("projection", projection);
 
     float slowDownFactor = 1.0f; // slow down it's too fast
@@ -216,11 +216,18 @@ int main() {
     {
         // Input
         processInput(window);
-        myshader.setMat4("view", view);
+        // 
         myshader.setMat4("projection", projection);
 
         // Rendering commands
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // Camera fly around
+        const float radius = 10.0f;
+        float camX = sin(glfwGetTime()) * radius;
+        float camZ = cos(glfwGetTime()) * radius;
+        view = glm::lookAt(glm::vec3(camX, 5.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+        myshader.setMat4("view", view);
 
         // ten rotating cubes
         for(unsigned int i = 0; i < 10; i++)

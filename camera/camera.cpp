@@ -12,6 +12,7 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 glm::mat4 projection;
 glm::mat4 view;
@@ -22,6 +23,7 @@ int WindowHeight = 600;
 // float cameraY = 0.0f;
 
 // for calculating camra rotation
+bool immersion = true;
 bool firstMouse = true;
 float lastX = 400, lastY = 300;
 float pitch = 0.0f, yaw = -90.0f;
@@ -232,6 +234,7 @@ int main() {
     // capture the cursor
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     // Draw loop
     while(!glfwWindowShouldClose(window))
@@ -297,24 +300,29 @@ void processInput(GLFWwindow *window)
     {
         // glfwSetWindowShouldClose(window, true);
         glfwSetCursorPosCallback(window, NULL);
+        glfwSetScrollCallback(window, NULL);
         firstMouse = true;
+        immersion = false;
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
     if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
     {
+        immersion = true;
         glfwSetCursorPosCallback(window, mouse_callback);
+        glfwSetScrollCallback(window, scroll_callback);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
-    if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && FoV < 180.0)
-    {
-        FoV+=0.1;
-        projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
-    }
-    if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && FoV > 0.0)
-    {
-        FoV-=0.1;
-        projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
-    }
+    if(!immersion) return;
+    // if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && FoV < 180.0)
+    // {
+    //     FoV+=0.1;
+    //     projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
+    // }
+    // if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && FoV > 0.0)
+    // {
+    //     FoV-=0.1;
+    //     projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
+    // }
     // // move camera
     // if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
     // {
@@ -379,4 +387,15 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     direction.y = sin(glm::radians(pitch));
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraFront = glm::normalize(direction);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    FoV -= (float)yoffset;
+    if (FoV < 1.0f)
+        FoV = 1.0f;
+    if (FoV > 45.0f)
+        FoV = 45.0f; 
+
+    projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
 }

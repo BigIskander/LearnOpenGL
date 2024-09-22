@@ -11,6 +11,7 @@
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
 glm::mat4 projection;
 glm::mat4 view;
@@ -19,6 +20,11 @@ int WindowWidth = 800;
 int WindowHeight = 600;
 // float cameraX = 0.0f;
 // float cameraY = 0.0f;
+
+// for calculating camra rotation
+bool firstMouse = true;
+float lastX = 400, lastY = 300;
+float pitch = 0.0f, yaw = -90.0f;
 
 // some camera settings
 glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
@@ -223,6 +229,10 @@ int main() {
 
     glEnable(GL_DEPTH_TEST); 
 
+    // capture the cursor
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouse_callback);
+
     // Draw loop
     while(!glfwWindowShouldClose(window))
     {
@@ -284,7 +294,17 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 void processInput(GLFWwindow *window)
 {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+    {
+        // glfwSetWindowShouldClose(window, true);
+        glfwSetCursorPosCallback(window, NULL);
+        firstMouse = true;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+    if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+    {
+        glfwSetCursorPosCallback(window, mouse_callback);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && FoV < 180.0)
     {
         FoV+=0.1;
@@ -326,4 +346,37 @@ void processInput(GLFWwindow *window)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) 
+{
+    if(firstMouse) // initially set to true
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
+    lastX = xpos;
+    lastY = ypos;
+
+    const float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw   += xoffset;
+    pitch += yoffset; 
+
+    if(pitch > 89.0f)
+        pitch =  89.0f;
+    if(pitch < -89.0f)
+        pitch = -89.0f;
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(direction);
 }

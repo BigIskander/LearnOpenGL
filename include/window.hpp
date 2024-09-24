@@ -9,7 +9,6 @@ int WindowHeight = 600;
 
 glm::mat4 projection;
 glm::mat4 view;
-glm::mat4 model;
 
 // for calculating camra rotation
 bool immersion = true;
@@ -62,11 +61,8 @@ int CreateWindow() {
     glfwSetScrollCallback(window, scroll_callback);
 
     // Going3D
-    model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // rotate along x axis (world space)
     projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f); // perspective projection camera
-
-    // new view
-    view = mycamera.GetViewMatrix();
+    view = mycamera.GetViewMatrix(); // new view
 
     return 0;
 }

@@ -57,6 +57,7 @@ int main()
     myshader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
     myshader.setVec3("lightColor",  1.0f, 1.0f, 1.0f);
     myshader.setVec3("lightPos", lightPos);
+    myshader.setVec3("viewPos", mycamera.Position);
 
     Shader lightingShader = Shader("./shaders/light_vertex.glsl", "./shaders/light_fragment.glsl");
     lightingShader.use();
@@ -82,6 +83,7 @@ int main()
         myshader.use();
         myshader.setMat4("projection", projection);
         myshader.setMat4("view", view);
+        myshader.setVec3("viewPos", mycamera.Position);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 

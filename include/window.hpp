@@ -103,6 +103,10 @@ void processInput(GLFWwindow *window)
         mycamera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         mycamera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        mycamera.ProcessKeyboard(SPACE, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+        mycamera.ProcessKeyboard(CTRL, deltaTime);
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) 

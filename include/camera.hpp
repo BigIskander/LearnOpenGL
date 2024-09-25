@@ -10,7 +10,9 @@ enum Camera_Movement {
     FORWARD,
     BACKWARD,
     LEFT,
-    RIGHT
+    RIGHT,
+    SPACE,
+    CTRL
 };
 
 // Default camera values
@@ -93,6 +95,10 @@ public:
             Position -= Right * velocity;
         if (direction == RIGHT)
             Position += Right * velocity;
+        if (direction == SPACE)
+            Position += Up * velocity;
+        if (direction == CTRL)
+            Position -= Up * velocity;
         // Position.y = 0.0f; // make it fps camera
     }
 

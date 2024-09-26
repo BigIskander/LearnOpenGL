@@ -73,6 +73,19 @@ int main()
     myshader.setVec3("lightPos", lightPos);
     myshader.setVec3("viewPos", mycamera.Position);
 
+    // Gouround shader
+    Shader gouraud = Shader("./shaders/vertex_gouraud.glsl", "./shaders/fragment_gouraud.glsl");
+    gouraud.use();
+    // send transformation matrices to shaders (main cube)
+    // glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // rotate along x axis (world space)
+    gouraud.setMat4("model", model);
+    gouraud.setMat4("view", view);
+    gouraud.setMat4("projection", projection);
+    gouraud.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+    gouraud.setVec3("lightColor",  1.0f, 1.0f, 1.0f);
+    gouraud.setVec3("lightPos", lightPos);
+    gouraud.setVec3("viewPos", mycamera.Position);
+
     Shader lightingShader = Shader("./shaders/light_vertex.glsl", "./shaders/light_fragment.glsl");
     lightingShader.use();
     // lighting cube
@@ -86,7 +99,12 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     bool moveLight = true;
-    
+    float ambientStrength = 0.1f;
+    float specularStrength = 0.5f;
+    float diffuseStrength = 1.0f;
+    int shininess = 32;
+    int isgouraud = 0;
+
     float angle = 0.0f;
 
     // Draw loop
@@ -102,8 +120,21 @@ int main()
         // if(settings) ...
         ImGui::NewFrame();
         ImGui::Begin("Debug:");
-        // ImGui::CollapsingHeader("Settings:", &setting);
+        // if(ImGui::CollapsingHeader("Settings:"))
+        ImGui::SeparatorText("Shading settings:");
+        ImGui::SliderFloat("ambient (0 - 1)", &ambientStrength, 0.0f, 1.0f, "%.3f");
+        ImGui::SliderFloat("diffuse (0 - 1)", &diffuseStrength, 0.0f, 1.0f, "%.3f");
+        ImGui::SliderFloat("specular (0 - 1)", &specularStrength, 0.0f, 1.0f, "%.3f");
+        ImGui::SliderInt("shininess (2 - 256)", &shininess, 2, 256, "%d");
+        ImGui::SeparatorText("Type of shading:");
+
+        ImGui::RadioButton("Phong", &isgouraud, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("Gouraund", &isgouraud, 1);
+
+        ImGui::SeparatorText("Other settings:");
         ImGui::Checkbox("Light is moving?", &moveLight);
+        ImGui::SeparatorText("FPS:");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
 
@@ -122,12 +153,30 @@ int main()
                                 cos(angle) * radius);
         }
             
+        if(isgouraud != 1) 
+        {
+            myshader.use();
+            myshader.setMat4("projection", projection);
+            myshader.setMat4("view", view);
+            myshader.setVec3("viewPos", mycamera.Position);
+            myshader.setVec3("lightPos", lightPos); // update light position
+            myshader.setFloat("ambientStrength", ambientStrength);
+            myshader.setFloat("diffuseStrength", diffuseStrength);
+            myshader.setFloat("specularStrength", specularStrength);
+            myshader.setInt("shininess", shininess);
+        } else
+        {
+            gouraud.use();
+            gouraud.setMat4("projection", projection);
+            gouraud.setMat4("view", view);
+            gouraud.setVec3("viewPos", mycamera.Position);
+            gouraud.setVec3("lightPos", lightPos); // update light position
+            gouraud.setFloat("ambientStrength", ambientStrength);
+            gouraud.setFloat("diffuseStrength", diffuseStrength);
+            gouraud.setFloat("specularStrength", specularStrength);
+            gouraud.setInt("shininess", shininess);
+        }
         
-        myshader.use();
-        myshader.setMat4("projection", projection);
-        myshader.setMat4("view", view);
-        myshader.setVec3("viewPos", mycamera.Position);
-        myshader.setVec3("lightPos", lightPos); // update light position
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         

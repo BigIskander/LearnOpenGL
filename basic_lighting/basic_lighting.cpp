@@ -79,15 +79,26 @@ int main()
         processInput(window); // Input
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffers
         view = mycamera.GetViewMatrix();
+
+        float radius = 2.0f;
+        lightPos = glm::vec3(
+                                sin((float)glfwGetTime())*radius, 
+                                sin((float)glfwGetTime())*radius, 
+                                cos((float)glfwGetTime())*radius);
         
         myshader.use();
         myshader.setMat4("projection", projection);
         myshader.setMat4("view", view);
         myshader.setVec3("viewPos", mycamera.Position);
+        myshader.setVec3("lightPos", lightPos); // update light position
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-
+        
+        // update lighting position
+        glm::mat4 Lighting_model = glm::translate(glm::mat4(1.0f), lightPos);
+        Lighting_model = glm::scale(Lighting_model, glm::vec3(0.2f));
         lightingShader.use();
+        lightingShader.setMat4("model", Lighting_model);
         lightingShader.setMat4("projection", projection);
         lightingShader.setMat4("view", view);
         glBindVertexArray(lightVAO);

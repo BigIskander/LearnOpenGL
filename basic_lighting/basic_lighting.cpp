@@ -146,7 +146,7 @@ int main()
         
         if(moveLight)
         {
-            angle += deltaTime * speed;
+            angle = std::remainder(angle + (deltaTime * speed), 2 * M_PI);
             lightPos = glm::vec3(
                                 sin(angle) * radius, 
                                 sin(angle) * radius, 

@@ -9,4 +9,4 @@ Used libraries:
 * [glad](https://glad.dav1d.de/)
 * [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)
 * [glm](https://glm.g-truc.net/0.9.8/index.html)
-
+* [Dear ImGui](https://github.com/ocornut/imgui)

@@ -2,6 +2,9 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+#ifdef IMGUI_VERSION
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+#endif
 
 GLFWwindow* window = NULL;
 int WindowWidth = 800;
@@ -59,7 +62,9 @@ int CreateWindow() {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
-
+#ifdef IMGUI_VERSION
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+#endif
     // Going3D
     projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f); // perspective projection camera
     view = mycamera.GetViewMatrix(); // new view
@@ -80,8 +85,6 @@ void processInput(GLFWwindow *window)
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         // glfwSetWindowShouldClose(window, true);
-        glfwSetCursorPosCallback(window, NULL);
-        glfwSetScrollCallback(window, NULL);
         firstMouse = true;
         immersion = false;
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -89,8 +92,6 @@ void processInput(GLFWwindow *window)
     if(glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
     {
         immersion = true;
-        glfwSetCursorPosCallback(window, mouse_callback);
-        glfwSetScrollCallback(window, scroll_callback);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
     if(!immersion) return;
@@ -111,6 +112,8 @@ void processInput(GLFWwindow *window)
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) 
 {
+    if(!immersion) return;
+
     if(firstMouse) // initially set to true
     {
         lastX = xpos;
@@ -132,11 +135,25 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) 
 {
+    if(!immersion) return;
+
     mycamera.ProcessMouseScroll((float)yoffset);
     FoV = mycamera.Zoom;
 
     projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
 }
+
+#ifdef IMGUI_VERSION
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) 
+{
+    if(!immersion) {
+        ImGuiIO& io = ImGui::GetIO();
+        if(io.WantCaptureMouse) {
+            io.AddMouseButtonEvent(button, action);
+        }
+    }
+}
+#endif
 
 void cout_time()
 {

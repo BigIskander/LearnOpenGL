@@ -56,6 +56,30 @@ int main()
     }
     stbi_image_free(data);
 
+    // create and load texture (specular maps)
+    unsigned int texture2;
+    glGenTextures(1, &texture2);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load an texture image
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char *data2 = stbi_load("container2_specular.png", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data2);
+
     // Vertex arrays
     unsigned int VAO;
     glGenVertexArrays(1, &VAO);
@@ -90,6 +114,7 @@ int main()
     Shader myshader = Shader("./shaders/vertex.glsl", "./shaders/fragment.glsl");
     myshader.use();
     myshader.setInt("material.diffuse", 0); // set texture number 0 as materials diffuse
+    myshader.setInt("material.specular", 1); // set texture number 1 as material specular
     glm::mat4 model = glm::mat4(1.0f);
     myshader.setMat4("model", model);
 
@@ -97,11 +122,6 @@ int main()
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-
-    // material properties
-    // glm::vec3 ambient(1.0f, 0.5f, 0.31f);
-    // glm::vec3 diffuse(1.0f, 0.5f, 0.31f);
-    glm::vec3 specular(0.5f, 0.5f, 0.5f);
 
     // light properties
     glm::vec3 lightAmbient(0.2f, 0.2f, 0.2f);
@@ -133,9 +153,6 @@ int main()
         ImGui::Begin("Debug:");
         // if(ImGui::CollapsingHeader("Settings:"))
         ImGui::SeparatorText("Material settings:");
-        // ImGui::ColorEdit3("material ambient", (float*)&ambient, ImGuiColorEditFlags_Float);
-        // ImGui::ColorEdit3("material diffuse", (float*)&diffuse, ImGuiColorEditFlags_Float);
-        ImGui::ColorEdit3("material specular", (float*)&specular, ImGuiColorEditFlags_Float);
         ImGui::SliderInt("shininess (2 - 256)", &shininess, 2, 256, "%d");
         ImGui::SeparatorText("Color settings:");
         ImGui::ColorEdit3("light ambient", (float*)&lightAmbient, ImGuiColorEditFlags_Float);
@@ -176,9 +193,6 @@ int main()
         myshader.setVec3("viewPos", mycamera.Position);
 
         // set material properties
-        // myshader.setVec3("material.ambient", ambient);
-        // myshader.setVec3("material.diffuse", diffuse);
-        myshader.setVec3("material.specular", specular);
         myshader.setInt("material.shininess", shininess);
     
         glm::vec3 lightColor = glm::vec3(1.0f);

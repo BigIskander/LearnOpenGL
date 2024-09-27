@@ -69,7 +69,7 @@ int main()
     // load an texture image
     stbi_set_flip_vertically_on_load(true);
     unsigned char *data2 = stbi_load("container2_specular.png", &width, &height, &nrChannels, 0);
-    if (data)
+    if (data2)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2);
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -79,6 +79,54 @@ int main()
         std::cout << "Failed to load texture" << std::endl;
     }
     stbi_image_free(data2);
+
+    // create and load texture (color specular maps)
+    unsigned int texture3;
+    glGenTextures(1, &texture3);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, texture3);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load an texture image
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char *data3 = stbi_load("lighting_maps_specular_color.png", &width, &height, &nrChannels, 0);
+    if (data3)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data3);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data3);
+
+    // create and load texture (color specular maps)
+    unsigned int texture4;
+    glGenTextures(1, &texture4);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, texture4);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load an texture image
+    stbi_set_flip_vertically_on_load(true);
+    unsigned char *data4 = stbi_load("matrix.jpg", &width, &height, &nrChannels, 0);
+    if (data4)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data4);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data4);
 
     // Vertex arrays
     unsigned int VAO;
@@ -115,6 +163,7 @@ int main()
     myshader.use();
     myshader.setInt("material.diffuse", 0); // set texture number 0 as materials diffuse
     myshader.setInt("material.specular", 1); // set texture number 1 as material specular
+    myshader.setInt("material.emission", 3); // set texture number 3 as material emission
     glm::mat4 model = glm::mat4(1.0f);
     myshader.setMat4("model", model);
 
@@ -131,6 +180,9 @@ int main()
     bool moveLight = true;
     bool partyTime = false;
     int shininess = 32;
+    bool invertSpecular = false;
+    bool colorSpecular = false;
+    bool useEmissionMaps = false;
 
     float radius = 2.0f;
     float speed = 1.5f;
@@ -153,6 +205,9 @@ int main()
         ImGui::Begin("Debug:");
         // if(ImGui::CollapsingHeader("Settings:"))
         ImGui::SeparatorText("Material settings:");
+        ImGui::Checkbox("Use emission maps", &useEmissionMaps);
+        ImGui::Checkbox("Color specular maps", &colorSpecular);
+        ImGui::Checkbox("Invert specular maps", &invertSpecular);
         ImGui::SliderInt("shininess (2 - 256)", &shininess, 2, 256, "%d");
         ImGui::SeparatorText("Color settings:");
         ImGui::ColorEdit3("light ambient", (float*)&lightAmbient, ImGuiColorEditFlags_Float);
@@ -162,6 +217,14 @@ int main()
         ImGui::Checkbox("Light is moving", &moveLight);
         ImGui::SliderFloat("light angle (0 - 2 * PI)", &angle, 0, 2 * M_PI, "%.3f");
         ImGui::Checkbox("Party time", &partyTime);
+        if(ImGui::Button("Turn off light!")) {
+            // light properties
+            partyTime = false;
+            lightAmbient = glm::vec3(0.0f);
+            lightDiffuse = glm::vec3(0.0f);
+            lightSpecular = glm::vec3(0.0f);
+        }
+        ImGui::SameLine();
         if(ImGui::Button("Go back!")) {
             // light properties
             partyTime = false;
@@ -211,7 +274,16 @@ int main()
         myshader.setVec3("light.position", lightPos); // update light position
         myshader.setVec3("light.ambient", lightAmbient);
         myshader.setVec3("light.diffuse", lightDiffuse);
-        myshader.setVec3("light.specular", lightSpecular); 
+        myshader.setVec3("light.specular", lightSpecular);
+        if(colorSpecular) 
+        {
+            myshader.setInt("material.specular", 2); // color specular maps
+        } else
+        {
+            myshader.setInt("material.specular", 1); // black and white specular maps
+        }
+        myshader.setBool("invertSpecular", invertSpecular); // invert or not
+        myshader.setBool("useEmissionMaps", useEmissionMaps); // emission or not
         
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);

@@ -70,10 +70,25 @@ int main()
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
+    // material properties
+    glm::vec3 ambient(1.0f, 0.5f, 0.31f);
+    glm::vec3 diffuse(1.0f, 0.5f, 0.31f);
+    glm::vec3 specular(0.5f, 0.5f, 0.5f);
+
+    // light properties
+    glm::vec3 lightAmbient(0.2f, 0.2f, 0.2f);
+    glm::vec3 lightDiffuse(0.5f, 0.5f, 0.5f);
+    glm::vec3 lightSpecular(1.0f, 1.0f, 1.0f);
+
     bool moveLight = true;
+    bool partyTime = false;
     int shininess = 32;
 
+    float radius = 2.0f;
+    float speed = 1.5f;
+    float partySpeed = 0.7f;
     float angle = M_PI / 4;
+    float partyAngle = 0.0f;
 
     // Draw loop
     while(!glfwWindowShouldClose(window))
@@ -83,38 +98,49 @@ int main()
         processInput(window); // Input
 
         // Start the Dear ImGui frame
-        // ImGui_ImplOpenGL3_NewFrame();
-        // ImGui_ImplGlfw_NewFrame();
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
         // if(settings) ...
-        // ImGui::NewFrame();
-        // ImGui::Begin("Debug:");
+        ImGui::NewFrame();
+        ImGui::Begin("Debug:");
         // if(ImGui::CollapsingHeader("Settings:"))
-        // ImGui::SeparatorText("Shading settings:");
-        // ImGui::SliderFloat("ambient (0 - 1)", &ambientStrength, 0.0f, 1.0f, "%.3f");
-        // ImGui::SliderFloat("diffuse (0 - 1)", &diffuseStrength, 0.0f, 1.0f, "%.3f");
-        // ImGui::SliderFloat("specular (0 - 1)", &specularStrength, 0.0f, 1.0f, "%.3f");
-        // ImGui::SliderInt("shininess (2 - 256)", &shininess, 2, 256, "%d");
-
-        // ImGui::SeparatorText("Other settings:");
-        // ImGui::Checkbox("Light is moving?", &moveLight);
-        // ImGui::SeparatorText("FPS:");
-        // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        // ImGui::End();
+        ImGui::SeparatorText("Material settings:");
+        ImGui::ColorEdit3("material ambient", (float*)&ambient, ImGuiColorEditFlags_Float);
+        ImGui::ColorEdit3("material diffuse", (float*)&diffuse, ImGuiColorEditFlags_Float);
+        ImGui::ColorEdit3("material specular", (float*)&specular, ImGuiColorEditFlags_Float);
+        ImGui::SliderInt("shininess (2 - 256)", &shininess, 2, 256, "%d");
+        ImGui::SeparatorText("Color settings:");
+        ImGui::ColorEdit3("light ambient", (float*)&lightAmbient, ImGuiColorEditFlags_Float);
+        ImGui::ColorEdit3("light diffuse", (float*)&lightDiffuse, ImGuiColorEditFlags_Float);
+        ImGui::ColorEdit3("light specular", (float*)&lightSpecular, ImGuiColorEditFlags_Float);
+        ImGui::SeparatorText("Other settings:");
+        ImGui::Checkbox("Light is moving", &moveLight);
+        ImGui::SliderFloat("light angle (0 - 2 * PI)", &angle, 0, 2 * M_PI, "%.3f");
+        ImGui::Checkbox("Party time", &partyTime);
+        if(ImGui::Button("Go back!")) {
+            // light properties
+            partyTime = false;
+            lightAmbient = glm::vec3(0.2f);
+            lightDiffuse = glm::vec3(0.5f);
+            lightSpecular = glm::vec3(1.0f);
+        }
+        ImGui::SeparatorText("FPS:");
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::End();
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffers
         view = mycamera.GetViewMatrix();
 
-        float radius = 2.0f;
-        float speed = 0.0f;
-        
         if(moveLight)
         {
             angle = std::remainder(angle + (deltaTime * speed), 2 * M_PI);
-            lightPos = glm::vec3(
-                                sin(angle) * radius, 
-                                sin(angle) * radius, 
-                                cos(angle) * radius);
+            if(angle < 0) angle +=  2 * M_PI;
         }
+            
+        lightPos = glm::vec3(
+                            sin(angle) * radius, 
+                            sin(angle) * radius, 
+                            cos(angle) * radius);
             
         myshader.use();
         myshader.setMat4("projection", projection);
@@ -122,24 +148,28 @@ int main()
         myshader.setVec3("viewPos", mycamera.Position);
 
         // set material properties
-        myshader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
-        myshader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-        myshader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
-        myshader.setFloat("material.shininess", 32.0f);
-
-        // set light properties
-        glm::vec3 lightColor;
-        lightColor.x = sin(glfwGetTime() * 2.0f);
-        lightColor.y = sin(glfwGetTime() * 0.7f);
-        lightColor.z = sin(glfwGetTime() * 1.3f);
-        
-        glm::vec3 diffuseColor = lightColor   * glm::vec3(0.5f); 
-        glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); 
-        
+        myshader.setVec3("material.ambient", ambient);
+        myshader.setVec3("material.diffuse", diffuse);
+        myshader.setVec3("material.specular", specular);
+        myshader.setInt("material.shininess", shininess);
+    
+        glm::vec3 lightColor = glm::vec3(1.0f);
+        if(partyTime) {
+            // set light properties
+            partyAngle = std::remainder(partyAngle + (deltaTime * partySpeed), 2 * M_PI);
+            if(partyAngle < 0) partyAngle +=  2 * M_PI;
+            
+            lightColor.x = (sin(partyAngle * 2.0f) / 2) + 0.5f;
+            lightColor.y = (sin(partyAngle * 0.7f) / 2) + 0.5f;
+            lightColor.z = (sin(partyAngle * 1.3f) / 2) + 0.5f;        
+            lightDiffuse = lightColor   * glm::vec3(0.5f); 
+            lightAmbient = lightDiffuse * glm::vec3(0.2f);
+        }
+         
         myshader.setVec3("light.position", lightPos); // update light position
-        myshader.setVec3("light.ambient", ambientColor);
-        myshader.setVec3("light.diffuse", diffuseColor);
-        myshader.setVec3("light.specular", 1.0f, 1.0f, 1.0f); 
+        myshader.setVec3("light.ambient", lightAmbient);
+        myshader.setVec3("light.diffuse", lightDiffuse);
+        myshader.setVec3("light.specular", lightSpecular); 
         
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -151,11 +181,12 @@ int main()
         lightingShader.setMat4("model", Lighting_model);
         lightingShader.setMat4("projection", projection);
         lightingShader.setMat4("view", view);
+        lightingShader.setVec3("lightColor", lightColor);
         glBindVertexArray(lightVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        // ImGui::Render();
-        // ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         // check and call events and swap the buffers
         glfwSwapBuffers(window);
         glfwPollEvents();    

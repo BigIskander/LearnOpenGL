@@ -160,13 +160,17 @@ int main()
 
     glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
-    Shader myshader = Shader("./shaders/vertex_directional_light.glsl", "./shaders/fragment_directional_light.glsl");
+    Shader myshader = Shader("./shaders/vertex_point_light.glsl", "./shaders/fragment_point_light.glsl");
     myshader.use();
     myshader.setInt("material.diffuse", 0); // set texture number 0 as materials diffuse
     myshader.setInt("material.specular", 1); // set texture number 1 as material specular
     myshader.setInt("material.emission", 3); // set texture number 3 as material emission
     glm::mat4 model = glm::mat4(1.0f);
     myshader.setMat4("model", model);
+
+    myshader.setFloat("light.constant",  1.0f);
+    myshader.setFloat("light.linear",    0.09f);
+    myshader.setFloat("light.quadratic", 0.032f);	
 
     Shader lightingShader = Shader("./shaders/light_vertex.glsl", "./shaders/light_fragment.glsl");
 
@@ -272,8 +276,8 @@ int main()
             lightAmbient = lightDiffuse * glm::vec3(0.2f);
         }
          
-        // myshader.setVec3("light.position", lightPos); // update light position
-        myshader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+        myshader.setVec3("light.position", lightPos); // update light position
+        // myshader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
         myshader.setVec3("light.ambient", lightAmbient);
         myshader.setVec3("light.diffuse", lightDiffuse);
         myshader.setVec3("light.specular", lightSpecular);
@@ -300,15 +304,15 @@ int main()
         }
         
         // update lighting position
-        // glm::mat4 Lighting_model = glm::translate(glm::mat4(1.0f), lightPos);
-        // Lighting_model = glm::scale(Lighting_model, glm::vec3(0.2f));
-        // lightingShader.use();
-        // lightingShader.setMat4("model", Lighting_model);
-        // lightingShader.setMat4("projection", projection);
-        // lightingShader.setMat4("view", view);
-        // lightingShader.setVec3("lightColor", lightColor);
-        // glBindVertexArray(lightVAO);
-        // glDrawArrays(GL_TRIANGLES, 0, 36);
+        glm::mat4 Lighting_model = glm::translate(glm::mat4(1.0f), lightPos);
+        Lighting_model = glm::scale(Lighting_model, glm::vec3(0.2f));
+        lightingShader.use();
+        lightingShader.setMat4("model", Lighting_model);
+        lightingShader.setMat4("projection", projection);
+        lightingShader.setMat4("view", view);
+        lightingShader.setVec3("lightColor", lightColor);
+        glBindVertexArray(lightVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

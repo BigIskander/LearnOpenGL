@@ -160,17 +160,23 @@ int main()
 
     glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
-    Shader myshader = Shader("./shaders/vertex_flash_light.glsl", "./shaders/fragment_flash_light.glsl");
-    myshader.use();
-    myshader.setInt("material.diffuse", 0); // set texture number 0 as materials diffuse
-    myshader.setInt("material.specular", 1); // set texture number 1 as material specular
-    myshader.setInt("material.emission", 3); // set texture number 3 as material emission
+    Shader myshader[] = {
+        Shader("./shaders/vertex_directional_light.glsl", "./shaders/fragment_directional_light.glsl"),
+        Shader("./shaders/vertex_point_light.glsl", "./shaders/fragment_point_light.glsl"),
+        Shader("./shaders/vertex_flash_light.glsl", "./shaders/fragment_flash_light.glsl"),
+        Shader("./shaders/vertex.glsl", "./shaders/fragment.glsl")
+    };
+    
+    // shaders settings
     glm::mat4 model = glm::mat4(1.0f);
-    myshader.setMat4("model", model);
-
-    myshader.setFloat("light.constant",  1.0f);
-    myshader.setFloat("light.linear",    0.09f);
-    myshader.setFloat("light.quadratic", 0.032f);	
+    for(int i = 0; i < 4; i++) {
+        myshader[i].use();
+        myshader[i].setInt("material.diffuse", 0); // set texture number 0 as materials diffuse
+        myshader[i].setInt("material.specular", 1); // set texture number 1 as material specular
+        myshader[i].setInt("material.emission", 3); // set texture number 3 as material emission
+        
+        myshader[i].setMat4("model", model);
+    }	
 
     Shader lightingShader = Shader("./shaders/light_vertex.glsl", "./shaders/light_fragment.glsl");
 
@@ -195,6 +201,8 @@ int main()
     float angle = M_PI / 4;
     float partyAngle = 0.0f;
 
+    int lightingType = 0;
+
     // Draw loop
     while(!glfwWindowShouldClose(window))
     {
@@ -214,6 +222,12 @@ int main()
         ImGui::Checkbox("Color specular maps", &colorSpecular);
         ImGui::Checkbox("Invert specular maps", &invertSpecular);
         ImGui::SliderInt("shininess (2 - 256)", &shininess, 2, 256, "%d");
+        ImGui::SeparatorText("Type of lighting:");
+        ImGui::RadioButton("Directional light", &lightingType, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("Point light", &lightingType, 1);
+        ImGui::SameLine();
+        ImGui::RadioButton("Flash light", &lightingType, 2);
         ImGui::SeparatorText("Color settings:");
         ImGui::ColorEdit3("light ambient", (float*)&lightAmbient, ImGuiColorEditFlags_Float);
         ImGui::ColorEdit3("light diffuse", (float*)&lightDiffuse, ImGuiColorEditFlags_Float);
@@ -254,14 +268,15 @@ int main()
                             sin(angle) * radius, 
                             sin(angle) * radius, 
                             cos(angle) * radius);
-            
-        myshader.use();
-        myshader.setMat4("projection", projection);
-        myshader.setMat4("view", view);
-        myshader.setVec3("viewPos", mycamera.Position);
+
+        // update selected shader properties    
+        myshader[lightingType].use();
+        myshader[lightingType].setMat4("projection", projection);
+        myshader[lightingType].setMat4("view", view);
+        myshader[lightingType].setVec3("viewPos", mycamera.Position);
 
         // set material properties
-        myshader.setInt("material.shininess", shininess);
+        myshader[lightingType].setInt("material.shininess", shininess);
     
         glm::vec3 lightColor = glm::vec3(1.0f);
         if(partyTime) {
@@ -275,26 +290,40 @@ int main()
             lightDiffuse = lightColor   * glm::vec3(0.5f); 
             lightAmbient = lightDiffuse * glm::vec3(0.2f);
         }
-         
-        // myshader.setVec3("light.position", lightPos); // update light position
-        // myshader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
-        myshader.setVec3("light.position",  mycamera.Position);
-        myshader.setVec3("light.direction", mycamera.Front);
-        myshader.setFloat("light.cutOff",   glm::cos(glm::radians(12.5f)));
-        myshader.setFloat("light.outerCutOff",   glm::cos(glm::radians(17.5f)));
 
-        myshader.setVec3("light.ambient", lightAmbient);
-        myshader.setVec3("light.diffuse", lightDiffuse);
-        myshader.setVec3("light.specular", lightSpecular);
+        if(lightingType == 1) // point light 
+        {
+            myshader[lightingType].setFloat("light.constant",  1.0f);
+            myshader[lightingType].setFloat("light.linear",    0.09f);
+            myshader[lightingType].setFloat("light.quadratic", 0.032f);
+            myshader[lightingType].setVec3("light.position", lightPos); // update light position
+        }
+        
+        if(lightingType == 0) // directional light 
+        {
+            myshader[lightingType].setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+        }
+
+        if(lightingType == 2) // flash light
+        {
+            myshader[lightingType].setVec3("light.position",  mycamera.Position);
+            myshader[lightingType].setVec3("light.direction", mycamera.Front);
+            myshader[lightingType].setFloat("light.cutOff",   glm::cos(glm::radians(12.5f)));
+            myshader[lightingType].setFloat("light.outerCutOff",   glm::cos(glm::radians(17.5f)));
+        }
+
+        myshader[lightingType].setVec3("light.ambient", lightAmbient);
+        myshader[lightingType].setVec3("light.diffuse", lightDiffuse);
+        myshader[lightingType].setVec3("light.specular", lightSpecular);
         if(colorSpecular) 
         {
-            myshader.setInt("material.specular", 2); // color specular maps
+            myshader[lightingType].setInt("material.specular", 2); // color specular maps
         } else
         {
-            myshader.setInt("material.specular", 1); // black and white specular maps
+            myshader[lightingType].setInt("material.specular", 1); // black and white specular maps
         }
-        myshader.setBool("invertSpecular", invertSpecular); // invert or not
-        myshader.setBool("useEmissionMaps", useEmissionMaps); // emission or not
+        myshader[lightingType].setBool("invertSpecular", invertSpecular); // invert or not
+        myshader[lightingType].setBool("useEmissionMaps", useEmissionMaps); // emission or not
 
         glBindVertexArray(VAO);
         for(unsigned int i = 0; i < 10; i++)

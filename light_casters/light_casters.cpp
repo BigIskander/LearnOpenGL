@@ -160,7 +160,7 @@ int main()
 
     glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
-    Shader myshader = Shader("./shaders/vertex_point_light.glsl", "./shaders/fragment_point_light.glsl");
+    Shader myshader = Shader("./shaders/vertex_flash_light.glsl", "./shaders/fragment_flash_light.glsl");
     myshader.use();
     myshader.setInt("material.diffuse", 0); // set texture number 0 as materials diffuse
     myshader.setInt("material.specular", 1); // set texture number 1 as material specular
@@ -276,8 +276,12 @@ int main()
             lightAmbient = lightDiffuse * glm::vec3(0.2f);
         }
          
-        myshader.setVec3("light.position", lightPos); // update light position
+        // myshader.setVec3("light.position", lightPos); // update light position
         // myshader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+        myshader.setVec3("light.position",  mycamera.Position);
+        myshader.setVec3("light.direction", mycamera.Front);
+        myshader.setFloat("light.cutOff",   glm::cos(glm::radians(12.5f)));
+
         myshader.setVec3("light.ambient", lightAmbient);
         myshader.setVec3("light.diffuse", lightDiffuse);
         myshader.setVec3("light.specular", lightSpecular);

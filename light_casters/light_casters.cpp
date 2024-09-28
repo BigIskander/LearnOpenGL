@@ -281,6 +281,7 @@ int main()
         myshader.setVec3("light.position",  mycamera.Position);
         myshader.setVec3("light.direction", mycamera.Front);
         myshader.setFloat("light.cutOff",   glm::cos(glm::radians(12.5f)));
+        myshader.setFloat("light.outerCutOff",   glm::cos(glm::radians(17.5f)));
 
         myshader.setVec3("light.ambient", lightAmbient);
         myshader.setVec3("light.diffuse", lightDiffuse);

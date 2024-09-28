@@ -19,6 +19,7 @@ struct Light {
     vec3  position;
     vec3  direction;
     float cutOff;
+    float outerCutOff;
   
     vec3 ambient;
     vec3 diffuse;
@@ -38,31 +39,27 @@ void main()
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(light.position - FragPos);
     float theta = dot(lightDir, normalize(-light.direction));
-    vec3 diffuse;
-    vec3 specular;
-    if(theta > light.cutOff) 
-    {       
-        // do lighting calculations
-        
-        float diff = max(dot(norm, lightDir), 0.0);
-        diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
+    float epsilon   = light.cutOff - light.outerCutOff;
+    float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
 
-        vec3 viewDir = normalize(viewPos - FragPos);
-        vec3 reflectDir = reflect(-lightDir, norm);
-        float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-        if(invertSpecular == true) 
-        {
-            specular = light.specular * spec * (vec3(1.0) - vec3(texture(material.specular, TexCoords)));
-        } else
-        {
-            specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
-        }
-    }
-    else  // else, use ambient light so scene isn't completely dark outside the spotlight.
+    // do lighting calculations
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
+
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    vec3 specular;
+    if(invertSpecular == true) 
     {
-        diffuse = vec3(0.0f);
-        specular = vec3(0.0f);
-    }    
+        specular = light.specular * spec * (vec3(1.0) - vec3(texture(material.specular, TexCoords)));
+    } else
+    {
+        specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
+    }
+
+    diffuse  *= intensity;
+    specular *= intensity; 
 
     vec3 result;
     if(useEmissionMaps == true)

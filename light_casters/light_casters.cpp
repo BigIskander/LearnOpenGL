@@ -203,6 +203,17 @@ int main()
 
     int lightingType = 0;
 
+    // derection light settings
+    bool upsideDown = false;
+
+    // point light settings
+    float lightLinear = 0.09f;
+    float lightQuadratic = 0.032f;
+
+    // flash light settings
+    float cutOff = 12.5f;
+    float outerCutOff = 17.5f;
+
     // Draw loop
     while(!glfwWindowShouldClose(window))
     {
@@ -228,6 +239,27 @@ int main()
         ImGui::RadioButton("Point light", &lightingType, 1);
         ImGui::SameLine();
         ImGui::RadioButton("Flash light", &lightingType, 2);
+        ImGui::SameLine();
+        ImGui::RadioButton("The Old light", &lightingType, 3);
+        ImGui::SeparatorText("Light settings:");
+        if(lightingType == 0) // point light 
+        {
+            ImGui::Checkbox("Upside down", &upsideDown);
+        }
+        if(lightingType == 1) // point light 
+        {
+            ImGui::SliderFloat("light linear", &lightLinear, 0.0014, 0.7, "%.4f");
+            ImGui::SliderFloat("light quadratic", &lightQuadratic, 0.0, 1.8, "%.4f");
+        }
+        if(lightingType == 2) // flash light 
+        {
+            ImGui::SliderFloat("cutoff", &cutOff, 0.0, 180.0, "%.1f");
+            ImGui::SliderFloat("outer cutoff", &outerCutOff, 0.0, 180.0, "%.1f");
+        }
+        if(lightingType == 3) // old light 
+        {
+            ImGui::Text("No settings");
+        }
         ImGui::SeparatorText("Color settings:");
         ImGui::ColorEdit3("light ambient", (float*)&lightAmbient, ImGuiColorEditFlags_Float);
         ImGui::ColorEdit3("light diffuse", (float*)&lightDiffuse, ImGuiColorEditFlags_Float);
@@ -294,22 +326,28 @@ int main()
         if(lightingType == 1) // point light 
         {
             myshader[lightingType].setFloat("light.constant",  1.0f);
-            myshader[lightingType].setFloat("light.linear",    0.09f);
-            myshader[lightingType].setFloat("light.quadratic", 0.032f);
+            myshader[lightingType].setFloat("light.linear",    lightLinear);
+            myshader[lightingType].setFloat("light.quadratic", lightQuadratic);
             myshader[lightingType].setVec3("light.position", lightPos); // update light position
         }
         
         if(lightingType == 0) // directional light 
         {
-            myshader[lightingType].setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+            if(upsideDown) myshader[lightingType].setVec3("light.direction", -0.2f, 1.0f, -0.3f);
+            else myshader[lightingType].setVec3("light.direction", -0.2f, -1.0f, -0.3f);
         }
 
         if(lightingType == 2) // flash light
         {
             myshader[lightingType].setVec3("light.position",  mycamera.Position);
             myshader[lightingType].setVec3("light.direction", mycamera.Front);
-            myshader[lightingType].setFloat("light.cutOff",   glm::cos(glm::radians(12.5f)));
-            myshader[lightingType].setFloat("light.outerCutOff",   glm::cos(glm::radians(17.5f)));
+            myshader[lightingType].setFloat("light.cutOff",   glm::cos(glm::radians(cutOff)));
+            myshader[lightingType].setFloat("light.outerCutOff",   glm::cos(glm::radians(outerCutOff)));
+        }
+
+        if(lightingType == 3) // the old one
+        {
+            myshader[lightingType].setVec3("light.position", lightPos); // update light position
         }
 
         myshader[lightingType].setVec3("light.ambient", lightAmbient);

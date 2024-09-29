@@ -60,19 +60,28 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir); 
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 FragPos, vec3 viewDir);
 
+// use light?
+uniform bool useDirectLight;
+uniform bool usePointLights;
+uniform bool useFlashLight;
+
 void main()
 {
     // properties
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
 
+    vec3 result = vec3(0.0);
     // phase 1: Directional lighting
-    vec3 result = CalcDirLight(dirLight, norm, viewDir);
+    if(useDirectLight) 
+        result += CalcDirLight(dirLight, norm, viewDir);
     // phase 2: Point lights
-    for(int i = 0; i < NR_POINT_LIGHTS; i++)
-        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+    if(usePointLights)
+        for(int i = 0; i < NR_POINT_LIGHTS; i++)
+            result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
     // phase 3: Spot light
-    result += CalcSpotLight(spotLight, norm, FragPos, viewDir); 
+    if(useFlashLight)
+        result += CalcSpotLight(spotLight, norm, FragPos, viewDir); 
 
     if(useEmissionMaps == true)
         result += vec3(texture(material.emission, TexCoords)) * (vec3(1.0) - vec3(texture(material.specular, TexCoords)));
@@ -125,9 +134,9 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     return (ambient + diffuse + specular);
 }
 
-vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 FragPos, vec3 viewDir) 
+vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir) 
 {
-    vec3 lightDir = normalize(light.position - FragPos);
+    vec3 lightDir = normalize(light.position - fragPos);
     // diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
     // specular shading

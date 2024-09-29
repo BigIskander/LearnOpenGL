@@ -208,7 +208,7 @@ int main()
         glm::vec3(1.0f, 1.0f, 1.0f)
     };
 
-    bool moveLight = true;
+    bool moveLight = false;
     bool partyTime = false;
     int shininess = 32;
     bool invertSpecular = false;
@@ -324,23 +324,55 @@ int main()
                 ImGui::ColorEdit3("Spot light specular", (float*)&spotLightSpecular, ImGuiColorEditFlags_Float);
             }
         ImGui::SeparatorText("Other settings:");
-        // ImGui::Checkbox("Light is moving", &moveLight);
+        ImGui::Checkbox("Move lights", &moveLight);
         // ImGui::SliderFloat("light angle (0 - 2 * PI)", &angle, 0, 2 * M_PI, "%.3f");
-        // ImGui::Checkbox("Party time", &partyTime);
+        ImGui::Checkbox("Party time", &partyTime);
         if(ImGui::Button("Turn off light!")) {
             // light properties
+            useDirectLight = false;
+            usePointLights = false;
+            useFlashLight = false;
             partyTime = false;
-            lightAmbient = glm::vec3(0.0f);
-            lightDiffuse = glm::vec3(0.0f);
-            lightSpecular = glm::vec3(0.0f);
+            moveLight = false;
         }
         ImGui::SameLine();
-        if(ImGui::Button("Go back!")) {
+        if(ImGui::Button("Everything to dafault!")) {
+            // material default
+            invertSpecular = false;
+            colorSpecular = false;
+            useEmissionMaps = false;
+            shininess = 32;
+            // clear color
+            clearColor = glm::vec3(0.1f, 0.1f, 0.1f);
             // light properties
+            useDirectLight = true;
+            usePointLights = true;
+            useFlashLight = true;
             partyTime = false;
-            lightAmbient = glm::vec3(0.2f);
-            lightDiffuse = glm::vec3(0.5f);
-            lightSpecular = glm::vec3(1.0f);
+            moveLight = false;
+            // directional default
+            directLightReverse = false;
+            directLightAmbient = glm::vec3(0.2f, 0.2f, 0.2f);
+            directLightDiffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+            directLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
+            // point lights default
+            pointLightPositions[0] = glm::vec3(0.7f,  0.2f,  2.0f);
+            pointLightPositions[1] = glm::vec3(2.3f, -3.3f, -4.0f);
+            pointLightPositions[2] = glm::vec3(-4.0f,  2.0f, -12.0f);
+            pointLightPositions[3] = glm::vec3(0.0f,  0.0f, -3.0f);
+            for(int p=0; p<4; p++) {
+                pointLightsLinear[p] = 0.09f;
+                pointLightsQuadratic[p] = 0.032f;
+                pointLightsAmbient[p] = glm::vec3(0.2f, 0.2f, 0.2f);
+                pointLightsDiffuse[p] = glm::vec3(0.5f, 0.5f, 0.5f);
+                pointLightsSpecular[p] = glm::vec3(1.0f, 1.0f, 1.0f);
+            }
+            // flashlight default
+            cutOff = 12.5f;
+            outerCutOff = 17.5f;
+            spotLightAmbient = glm::vec3(0.2f, 0.2f, 0.2f);
+            spotLightDiffuse = glm::vec3(0.5f, 0.5f, 0.5f);
+            spotLightSpecular = glm::vec3(1.0f, 1.0f, 1.0f);
         }
         ImGui::SeparatorText("FPS:");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
@@ -351,8 +383,13 @@ int main()
 
         if(moveLight)
         {
+            usePointLights = true;
             angle = std::remainder(angle + (deltaTime * speed), 2 * M_PI);
             if(angle < 0) angle +=  2 * M_PI;
+            pointLightPositions[0] = glm::vec3(sin(angle) * 0.7f,  cos(angle) * 0.2f,  2.0f);
+            pointLightPositions[1] = glm::vec3(sin(angle) * 2.3f,  cos(angle) * -3.3f,  -4.0f);
+            pointLightPositions[2] = glm::vec3(sin(angle) * -4.0f,  cos(angle) * 2.0f,  -12.0f);
+            pointLightPositions[3] = glm::vec3(0.0f, 0.0f,  sin(angle) * -3.0f);
         }
             
         lightPos = glm::vec3(
@@ -371,15 +408,20 @@ int main()
     
         glm::vec3 lightColor = glm::vec3(1.0f);
         if(partyTime) {
+            usePointLights = true;
             // set light properties
             partyAngle = std::remainder(partyAngle + (deltaTime * partySpeed), 2 * M_PI);
             if(partyAngle < 0) partyAngle +=  2 * M_PI;
-            
             lightColor.x = (sin(partyAngle * 2.0f) / 2) + 0.5f;
             lightColor.y = (sin(partyAngle * 0.7f) / 2) + 0.5f;
             lightColor.z = (sin(partyAngle * 1.3f) / 2) + 0.5f;        
             lightDiffuse = lightColor   * glm::vec3(0.5f); 
             lightAmbient = lightDiffuse * glm::vec3(0.2f);
+            for(int k=0; k<4; k++) 
+            {
+                pointLightsDiffuse[k] = lightDiffuse;
+                pointLightsAmbient[k] = lightAmbient;
+            }   
         }
 
         myshader.setBool("useDirectLight", useDirectLight);

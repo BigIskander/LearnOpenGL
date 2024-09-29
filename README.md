@@ -12,3 +12,4 @@ Used libraries:
 * [Dear ImGui](https://github.com/ocornut/imgui)
 
 ![image](basic_lighting.gif)
+![image](multiple_lights.gif)

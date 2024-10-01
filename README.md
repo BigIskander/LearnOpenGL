@@ -14,3 +14,4 @@ Used libraries:
 
 ![image](basic_lighting.gif)
 ![image](multiple_lights.gif)
+![image](model_loading.gif)

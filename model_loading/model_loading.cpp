@@ -17,6 +17,8 @@
 
 #include <model.hpp>
 
+#include <cube_vertices.hpp>
+
 int main() 
 {
     // Create window (my function)
@@ -35,13 +37,35 @@ int main()
     stbi_set_flip_vertically_on_load(true);
 
     Shader myshader = Shader("./shaders/vertex.glsl", "./shaders/fragment.glsl");
+    Shader lightingShader = Shader("./shaders/light_vertex.glsl", "./shaders/light_fragment.glsl");
 
+    // Vertex arrays lighting
+    unsigned int lightVAO;
+    glGenVertexArrays(1, &lightVAO);
+    glBindVertexArray(lightVAO);
+    // Vertex buffer
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO); 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // set the vertex attribute 
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glm::vec3 lightColor = glm::vec3(1.0f);
+    glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+
+    // The model
     Model theModel("./model/backpack/backpack.obj");
 
     glEnable(GL_DEPTH_TEST);
 
     // clear color
     glm::vec3 clearColor(0.1f, 0.1f, 0.1f);
+    bool moveLight = true;
+    float angle = M_PI / 4;
+    float radius = 5.0f;
+    float speed = 1.5f;
 
     // Draw loop
     while(!glfwWindowShouldClose(window))
@@ -57,8 +81,22 @@ int main()
         // if(settings) ...
         ImGui::NewFrame();
         ImGui::Begin("Debug:");
-        ImGui::ColorEdit3("Clear color", (float*)&clearColor, ImGuiColorEditFlags_Float);
+        ImGui::ColorEdit3("Clear color", (float*)&clearColor);
+        ImGui::ColorEdit3("Light color", (float*)&lightColor);
+        ImGui::Checkbox("Light is moving", &moveLight);
+        ImGui::SliderFloat("light angle (0 - 2 * PI)", &angle, 0, 2 * M_PI, "%.3f");
         ImGui::End();
+
+        if(moveLight)
+        {
+            angle = std::remainder(angle + (deltaTime * speed), 2 * M_PI);
+            if(angle < 0) angle +=  2 * M_PI;
+        }
+            
+        lightPos = glm::vec3(
+                            sin(angle) * radius, 
+                            sin(angle) * radius, 
+                            cos(angle) * radius);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear buffers
         view = mycamera.GetViewMatrix();
@@ -73,7 +111,22 @@ int main()
         model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
         myshader.setMat4("model", model);
 
+        myshader.setVec3("lightPosition", lightPos);
+        myshader.setVec3("lightColor", lightColor);
+        myshader.setVec3("viewPos", mycamera.Position);
+
         theModel.Draw(myshader);
+
+        // update lighting position
+        glm::mat4 Lighting_model = glm::translate(glm::mat4(1.0f), lightPos);
+        Lighting_model = glm::scale(Lighting_model, glm::vec3(0.2f));
+        lightingShader.use();
+        lightingShader.setMat4("model", Lighting_model);
+        lightingShader.setMat4("projection", projection);
+        lightingShader.setMat4("view", view);
+        lightingShader.setVec3("lightColor", lightColor);
+        glBindVertexArray(lightVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

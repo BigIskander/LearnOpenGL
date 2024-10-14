@@ -5,6 +5,14 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 #ifdef IMGUI_VERSION
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 #endif
+#ifdef USE_FRAMEBUFFER
+void recreate_framebuffer();
+// for framebuffer
+bool framebuffer_firstrun = true;
+unsigned int framebuffer;
+unsigned int textureColorbuffer;
+unsigned int rbo;
+#endif
 
 GLFWwindow* window = NULL;
 int WindowWidth = 800;
@@ -78,6 +86,9 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     WindowHeight = height;
     glViewport(0, 0, width, height);
     projection = glm::perspective(glm::radians(FoV), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
+#ifdef USE_FRAMEBUFFER
+    recreate_framebuffer();
+#endif
 }
 
 void processInput(GLFWwindow *window)
@@ -152,6 +163,36 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             io.AddMouseButtonEvent(button, action);
         }
     }
+}
+#endif
+
+#ifdef USE_FRAMEBUFFER
+void recreate_framebuffer()
+{
+    // framebuffer configuration
+    // -------------------------
+    // unsigned int framebuffer;
+    if(framebuffer_firstrun) glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    // create a color attachment texture
+    // unsigned int textureColorbuffer;
+    if(framebuffer_firstrun) glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WindowWidth, WindowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+    // create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
+    // unsigned int rbo;
+    if(framebuffer_firstrun) glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WindowWidth, WindowHeight); // use a single renderbuffer object for both a depth AND stencil buffer.
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo); // now actually attach it
+    // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if(framebuffer_firstrun) framebuffer_firstrun = false;
 }
 #endif
 

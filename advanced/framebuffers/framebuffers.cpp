@@ -140,6 +140,8 @@ int main()
     // draw as wireframe
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    int postprocessing = 0;
+
     // Draw loop
     while(!glfwWindowShouldClose(window))
     {
@@ -189,6 +191,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         screenShader.use();
+        screenShader.setInt("postprocessing", postprocessing);
         glBindVertexArray(quadVAO);
         glBindTexture(GL_TEXTURE_2D, textureColorbuffer);	// use the color attachment texture as the texture of the quad plane
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -200,6 +203,14 @@ int main()
         // if(settings) ...
         ImGui::NewFrame();
         ImGui::Begin("Debug:");
+        ImGui::SeparatorText("Postprocessing effects:");
+        ImGui::RadioButton("No postprocessing", &postprocessing, 0); ImGui::SameLine();
+        ImGui::RadioButton("Invert colors", &postprocessing, 1);
+        ImGui::RadioButton("Grayscale 1", &postprocessing, 2); ImGui::SameLine();
+        ImGui::RadioButton("Grayscale 2", &postprocessing, 3);
+        ImGui::RadioButton("Sharpen", &postprocessing, 4); ImGui::SameLine();
+        ImGui::RadioButton("Blur", &postprocessing, 5); 
+        ImGui::RadioButton("Edge detection", &postprocessing, 6);
         ImGui::End();
 
         ImGui::Render();

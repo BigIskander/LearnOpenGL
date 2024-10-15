@@ -18,6 +18,8 @@
 // #define USE_FRAMEBUFFER
 #include <window.hpp>
 
+#include <model.hpp>
+
 #include <cube_vertices.hpp>
 
 unsigned int loadTexture(const char *path);
@@ -44,6 +46,8 @@ int main()
 
     // load shaders
     Shader shader("shaders/cubemaps_vertex.glsl", "shaders/cubemaps_fragment.glsl");
+    Shader shaderMirror("shaders/mirror_vertex.glsl", "shaders/mirror_fragment.glsl");
+    Shader shaderTransparent("shaders/transparent_vertex.glsl", "shaders/transparent_fragment.glsl");
     Shader skyboxShader("shaders/skybox_vertex.glsl", "shaders/skybox_fragment.glsl");
 
     // cube VAO
@@ -57,6 +61,19 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    // mirror or transparent cube VAO
+    unsigned int transparentCubeVAO, transparentCubeVBO;
+    glGenVertexArrays(1, &transparentCubeVAO);
+    glGenBuffers(1, &transparentCubeVBO);
+    glBindVertexArray(transparentCubeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, transparentCubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentCubeVertices), &transparentCubeVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+
     // skybox VAO
     unsigned int skyboxVAO, skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
@@ -90,6 +107,12 @@ int main()
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
 
+    // The model
+    Model theModel("../../model_loading/model/backpack/backpack.obj");
+
+    int object = 0;
+    float refractiveIndex = 1.52;
+
     // Draw loop
     while(!glfwWindowShouldClose(window))
     {
@@ -103,20 +126,73 @@ int main()
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // draw scene as normal
-        shader.use();
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = mycamera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(mycamera.Zoom), (float)WindowWidth / (float)WindowHeight, 0.1f, 100.0f);
-        shader.setMat4("model", model);
-        shader.setMat4("view", view);
-        shader.setMat4("projection", projection);
-        // cubes
-        glBindVertexArray(cubeVAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, cubeTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
+
+        switch(object) {
+            case 0: // regular cube
+                // draw scene as normal
+                shader.use();
+                shader.setMat4("model", model);
+                shader.setMat4("view", view);
+                shader.setMat4("projection", projection);
+                // cubes
+                glBindVertexArray(cubeVAO);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, cubeTexture);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+                glBindVertexArray(0);
+                break;
+            case 1: // mirror cube
+                // draw scene as normal
+                shaderMirror.use();
+                shaderMirror.setMat4("model", model);
+                shaderMirror.setMat4("view", view);
+                shaderMirror.setMat4("projection", projection);
+                shaderMirror.setVec3("cameraPos", mycamera.Position);
+                // cubes
+                glBindVertexArray(transparentCubeVAO);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+                glBindVertexArray(0);
+                break;
+            case 2:
+                // draw scene as normal
+                shaderTransparent.use();
+                shaderTransparent.setMat4("model", model);
+                shaderTransparent.setMat4("view", view);
+                shaderTransparent.setMat4("projection", projection);
+                shaderTransparent.setVec3("cameraPos", mycamera.Position);
+                shaderTransparent.setFloat("refractiveIndex", refractiveIndex);
+                // cubes
+                glBindVertexArray(transparentCubeVAO);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+                glBindVertexArray(0);
+                break;
+            case 3:
+                // draw scene as normal
+                shaderMirror.use();
+                shaderMirror.setMat4("model", model);
+                shaderMirror.setMat4("view", view);
+                shaderMirror.setMat4("projection", projection);
+                shaderMirror.setVec3("cameraPos", mycamera.Position);
+                theModel.Draw(shaderMirror);
+                break;
+            case 4:
+                // draw scene as normal
+                shaderTransparent.use();
+                shaderTransparent.setMat4("model", model);
+                shaderTransparent.setMat4("view", view);
+                shaderTransparent.setMat4("projection", projection);
+                shaderTransparent.setVec3("cameraPos", mycamera.Position);
+                shaderTransparent.setFloat("refractiveIndex", refractiveIndex);
+                theModel.Draw(shaderTransparent);
+                break;
+        }
 
         // draw skybox as last
         glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
@@ -138,7 +214,15 @@ int main()
         // if(settings) ...
         ImGui::NewFrame();
         ImGui::Begin("Debug:");
-
+        ImGui::SeparatorText("Object:");
+        ImGui::RadioButton("Regular container", &object, 0); //ImGui::SameLine();
+        ImGui::RadioButton("Mirror container", &object, 1); 
+        ImGui::RadioButton("Transparent container", &object, 2);
+        ImGui::RadioButton("Mirror model", &object, 3);
+        ImGui::RadioButton("Transparent model", &object, 4);
+        if(object == 2 || object == 4) {
+            ImGui::SliderFloat("Refractive index", &refractiveIndex, 1.00f, 2.42f, "%.3f");
+        }
         ImGui::End();
 
         ImGui::Render();
